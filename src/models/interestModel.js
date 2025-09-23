@@ -16,7 +16,22 @@ const interestSchema = new mongoose.Schema({
     },
     image:{
         type:String
+    },
+    location:{
+        type:{
+            type:String,
+            enum:['Point'],
+            required:true,
+            default:'Point'
+        },
+        coordinates:{
+            type:[Number], // longitude and latitude
+            required:true
+
+        }
     }
 }, {timestamps:true})
+
+interestSchema.index({location:'2dsphere'})
 
 export const Interest = mongoose.model("Interest", interestSchema)

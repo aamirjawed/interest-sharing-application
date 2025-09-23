@@ -1,12 +1,12 @@
 import { User } from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 
-const registerUser = async (req, res) => {
-    
-    try {
-        let { userName, fullName, email, password, DOB } = req.body;
+export const registerUser = async (req, res) => {
 
-        if (!userName || !fullName || !email  || !password || !DOB) {
+    try {
+        let { userName, fullName, email, password, DOB, location } = req.body;
+
+        if (!userName || !fullName || !email || !password || !DOB) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
@@ -32,13 +32,14 @@ const registerUser = async (req, res) => {
             });
         }
 
-        const user = await User.create({ 
-            userName, 
-            fullName, 
+        const user = await User.create({
+            userName,
+            fullName,
             email,
             password,
             DOB,
-         });
+            location
+        });
 
         if (!user) {
             return res.status(500).json({
@@ -66,7 +67,7 @@ const registerUser = async (req, res) => {
 
 
 export const loginUser = async (req, res) => {
-    
+
     try {
         let { email, password } = req.body;
         if (!email || !password) {
@@ -90,7 +91,7 @@ export const loginUser = async (req, res) => {
                 message: "Invalid password"
             });
         }
-        const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+        const token = await jwt.sign({ id: user._id, fullName: user.fullName }, process.env.JWT_SECRET);
         const { password: _, ...newUser } = user.toObject(); // exclude password
 
         res.cookie("token", token, {
@@ -113,4 +114,61 @@ export const loginUser = async (req, res) => {
     }
 }
 
-export default registerUser;
+export const CurrentUser = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        // Find user and exclude password
+        const user = await User.findById(userId).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Current user",
+            user
+        });
+    } catch (error) {
+        console.error("Error fetching current user:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+
+export const updateUserLocation = async (req, res) => {
+    try {
+        const userId = req.userId; // from auth middleware
+        const { lng, lat } = req.body;
+
+        if (lng === undefined || lat === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: "Both lng and lat are required"
+            });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] } },
+            { new: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Location updated successfully",
+            location: updatedUser.location
+        });
+
+    } catch (error) {
+        console.error("Error updating location:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};

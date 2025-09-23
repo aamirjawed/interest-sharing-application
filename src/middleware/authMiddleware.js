@@ -1,41 +1,49 @@
-import jwt from 'jsonwebtoken'
-import {User} from '../models/userModel.js'
+import jwt from 'jsonwebtoken';
+import { User } from '../models/userModel.js';
 
 export const authUser = async (req, res, next) => {
     try {
-        
-        const {token}  = req.cookies
+        const { token } = req.cookies;
 
-        if(!token){
-            res.clearCookie('token')
+        if (!token) {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production'
+            });
             return res.status(401).json({
-                success:false,
-                message:"Please login",
-                error:"Token not found"
-            })
+                success: false,
+                message: "Please login",
+                error: "Token not found"
+            });
         }
 
-        const decodedMessage = jwt.verify(token, process.env.JWT_SECRET)
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const { id, fullName } = decoded;
 
-        const {id} = decodedMessage
-
-        const user = await User.findById(id)
-
-        if(!user){
+        // Optional: check if user still exists
+        const userExists = await User.exists({ _id: id });
+        if (!userExists) {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production'
+            });
             return res.status(401).json({
-                success:false,
-                message:"Unauthorized"
-            })
+                success: false,
+                message: "Unauthorized"
+            });
         }
 
-        req.userId = user._id
+        // Attach info from JWT to request
+        req.userId = id;
+        req.userName = fullName;
 
-        next()
+        next();
     } catch (error) {
-        console.log("Error in auth middleware", error.message)
+        console.log("Error in auth middleware", error.message);
         return res.status(500).json({
-            success:false,
-            message:"Internal server error"
-        })
+            success: false,
+            message: "Internal server error"
+        });
     }
-}
+};

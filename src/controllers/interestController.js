@@ -1,34 +1,66 @@
 import { User } from "../models/userModel.js";
 import { Interest } from '../models/interestModel.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { response } from "express";
+
 
 export const addInterest = async (req, res) => {
     try {
-        const userId = req.userId
+        const userId = req.userId;
+        const userName = req.userName;
+        const { title, description, lng, lat } = req.body;
 
-        const { title, description } = req.body
-
-        if (!title) {
+        if (!title || !lng || !lat) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
             });
         }
 
+        // Upload image if provided
         let imageUrl;
-
         if (req.file) {
-            const result = await uploadOnCloudinary(req.file.path)
-            if (result) imageUrl = result.secure_url
+            const result = await uploadOnCloudinary(req.file.path);
+            if (result) imageUrl = result.secure_url;
         }
 
+        // Create new interest
         const newInterest = await Interest.create({
             userId,
             title,
             description,
-            image: imageUrl
-        })
+            image: imageUrl,
+            location: {
+                type: 'Point',
+                coordinates: [parseFloat(lng), parseFloat(lat)]
+            }
+        });
+
+        // Update user's location
+        await User.findByIdAndUpdate(userId, {
+            location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] }
+        });
+
+        // Find nearby users (exclude the current user)
+        const nearbyUsers = await User.find({
+            _id: { $ne: userId },
+            location: {
+                $near: {
+                    $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
+                    $maxDistance: 5000 // in meters
+                }
+            }
+        });
+
+        // Emit notifications
+        if (global.io) {
+            nearbyUsers.forEach(user => {
+                global.io.to(user._id.toString()).emit("new-interest", {
+                    title,
+                    description,
+                    createdBy: userName
+                });
+            });
+        }
 
         res.status(201).json({
             success: true,
@@ -36,19 +68,21 @@ export const addInterest = async (req, res) => {
         });
 
     } catch (error) {
-        console.log("Error in interest controller", error.message)
+        console.error("Error in addInterest controller:", error.message);
         res.status(500).json({
             success: false,
-            message: "Internal Server error"
-        })
+            message: "Internal server error"
+        });
     }
-}
+};
+
+
 
 export const getAllInterest = async (req, res) => {
     try {
         const userId = req.userId;
 
-        const interests = await Interest.find({ userId });
+        const interests = await Interest.find({ userId }).populate("userId", "fullName", "email");
 
         if (!interests || interests.length === 0) {
             return res.status(404).json({
@@ -136,7 +170,7 @@ export const getInterestById = async(req, res) => {
 
         const userId = req.userId
 
-        const interest = await Interest.findById({_id:interestId, userId})
+        const interest = await Interest.findOne({_id:interestId, userId}).populate("userId", "fullName", "email")
 
         if(!interest){
             return res.status(404).json({
@@ -184,6 +218,41 @@ export const deleteInterest = async(req, res) => {
             success:false,
             message:"Internal server error"
         })
+    }
+}
+
+
+export const getNearByInterest = async(req, res) => {
+    try {
+        const {lng, lat, radius = 5000} = req.query
+
+        if(!lng || !lat){
+            return res.status(400).json({
+                success: false,
+                message: "Location (lng, lat) is required"
+            });
+        }
+
+        const interests = await Interest.find({
+            location:{
+                $near:{
+                    $geometry:{type:'Point', coordinates:[parseFloat(lng), parseFloat(lat)]},
+                    $maxDistance:parseInt(radius)
+                }
+            }
+        }).populate("userId", "fullName", "email")
+
+        res.status(200).json({
+            success:true,
+            count:interests.length,
+            interests
+        })
+    } catch (error) {
+        console.log("Error in get nearby interests", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Internal Server error"
+        });
     }
 }
 

@@ -22,7 +22,6 @@ const userSchema = new mongoose.Schema({
         unique: true,
         validate: [validator.isEmail, "Please enter a valid email"]
     },
-   
     password: {
         type: String,
         required: [true, "Password is required"],
@@ -32,8 +31,12 @@ const userSchema = new mongoose.Schema({
         type:Date,
         required:[true, "Date of Birth is required"]
     },
-    
+    location: {
+        type: { type: String, default: "Point" },
+        coordinates: { type: [Number], default: [0, 0] } // [lng, lat]
+    }
 }, { timestamps: true });
+
 
 
 
