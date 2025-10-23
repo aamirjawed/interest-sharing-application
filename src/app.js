@@ -19,7 +19,7 @@ const app = express();
 const server = http.createServer(app); 
 
 app.use(cors({
-  origin:'http://localhost:5173',
+  origin:'https://interest-sharing.netlify.app',
   credentials: true,
 }))
 
@@ -43,7 +43,7 @@ app.use('/v1/categories', categoryRoutes);
 // Setup socket.io
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    origin: 'https://interest-sharing.netlify.app',
     methods: ["GET", "POST"],
     credentials: true
   }
