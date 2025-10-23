@@ -9,7 +9,7 @@ export const authUser = async (req, res, next) => {
             res.clearCookie('token', {
                 httpOnly: true,
                 secure: false, // Allow cookies over HTTP for development
-                sameSite: "none" // Allow cross-origin cookies
+                sameSite: "lax" // Allow cross-origin cookies for development
             });
             return res.status(401).json({
                 success: false,
@@ -28,7 +28,7 @@ export const authUser = async (req, res, next) => {
             res.clearCookie('token', {
                 httpOnly: true,
                 secure: false, // Allow cookies over HTTP for development
-                sameSite: "none" // Allow cross-origin cookies
+                sameSite: "lax" // Allow cross-origin cookies for development
             });
             return res.status(401).json({
                 success: false,
