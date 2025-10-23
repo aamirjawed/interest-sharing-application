@@ -34,7 +34,12 @@ const userSchema = new mongoose.Schema({
     location: {
         type: { type: String, default: "Point" },
         coordinates: { type: [Number], default: [0, 0] } // [lng, lat]
-    }
+    },
+    interests: [{
+        type: String,
+        lowercase: true,
+        trim: true
+    }]
 }, { timestamps: true });
 
 

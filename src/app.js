@@ -2,18 +2,26 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import http from 'http';
+import cors from 'cors'
 import { Server } from 'socket.io';
 
 import connectDB from './db/index.js';
 import authRoutes from './routes/authRoutes.js';
 import interestRoutes from './routes/interestRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 dotenv.config();
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 const app = express();
-const server = http.createServer(app); //wrap express in HTTP server
+const server = http.createServer(app); 
+
+app.use(cors({
+  origin:'http://localhost:5173',
+  credentials: true,
+}))
 
 // Middlewares
 app.use(express.json());
@@ -29,12 +37,15 @@ app.post('/test', (req, res) => {
 // API routes
 app.use('/v1/auth', authRoutes);
 app.use('/v1/interest', interestRoutes);
+app.use('/v1/user', userRoutes);
+app.use('/v1/categories', categoryRoutes);
 
 // Setup socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*", // later replace with frontend URL
-    methods: ["GET", "POST"]
+    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 global.io = io;

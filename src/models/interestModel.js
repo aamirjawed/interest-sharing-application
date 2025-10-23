@@ -11,6 +11,11 @@ const interestSchema = new mongoose.Schema({
         required:true,
         index:true,
     },
+    tags: [{
+        type: String,
+        lowercase: true,
+        trim: true
+    }],
     description:{
         type:String,
     },
