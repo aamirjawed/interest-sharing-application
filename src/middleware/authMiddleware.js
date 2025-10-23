@@ -8,7 +8,8 @@ export const authUser = async (req, res, next) => {
         if (!token) {
             res.clearCookie('token', {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production'
+                secure: false, // Allow cookies over HTTP for development
+                sameSite: "none" // Allow cross-origin cookies
             });
             return res.status(401).json({
                 success: false,
@@ -26,7 +27,8 @@ export const authUser = async (req, res, next) => {
         if (!userExists) {
             res.clearCookie('token', {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production'
+                secure: false, // Allow cookies over HTTP for development
+                sameSite: "none" // Allow cross-origin cookies
             });
             return res.status(401).json({
                 success: false,

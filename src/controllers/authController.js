@@ -136,7 +136,8 @@ export const loginUser = async (req, res) => {
     // Set cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Allow cookies over HTTP for development
+      sameSite: "none", // Allow cross-origin cookies
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
@@ -220,8 +221,8 @@ export const logoutUser = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: false, // Allow cookies over HTTP for development
+      sameSite: "none", // Allow cross-origin cookies
       path: "/",
     });
     return res.status(200).json({ success: true, message: "Logged out" });
