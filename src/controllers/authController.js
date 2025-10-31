@@ -134,12 +134,13 @@ export const loginUser = async (req, res) => {
     const { password: _, ...newUser } = user.toObject();
 
     // Set cookie
-   res.cookie("token", token, {
-  httpOnly: false, // Just to test
-  secure: false,
-  sameSite: "lax",
+ res.cookie("token", token, {
+  httpOnly: true,   
+  secure: true,       
+  sameSite: "none",   
   maxAge: 30 * 24 * 60 * 60 * 1000,
 });
+
 
 
     res.status(200).json({
