@@ -43,7 +43,7 @@ app.use('/v1/categories', categoryRoutes);
 // Setup socket.io
 const io = new Server(server, {
   cors: {
-    origin: 'https://interest-sharing.netlify.app',
+    origin:'https://interest-sharing.netlify.app',
     methods: ["GET", "POST"],
     credentials: true
   }

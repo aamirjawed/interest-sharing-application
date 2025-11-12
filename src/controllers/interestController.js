@@ -333,3 +333,26 @@ export const getNearByInterest = async (req, res) => {
     });
   }
 };
+
+// Get all interests by a specific user ID
+export const getInterestsByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const interests = await Interest.find({ userId })
+      .sort({ createdAt: -1 })
+      .populate("userId", "fullName userName email");
+
+    res.status(200).json({
+      success: true,
+      message: "User posts fetched successfully",
+      interests: interests || [],
+    });
+  } catch (error) {
+    console.log("Error in get interests by user ID:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server error",
+    });
+  }
+};

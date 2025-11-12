@@ -19,7 +19,23 @@ export const authUser = async (req, res, next) => {
         }
 
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            // Token is expired or invalid
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: false, 
+                sameSite: "lax" 
+            });
+            return res.status(401).json({
+                success: false,
+                message: "Session expired. Please login again",
+                error: jwtError.name === 'TokenExpiredError' ? "Token expired" : "Invalid token"
+            });
+        }
+
         const { id, fullName } = decoded;
 
         // Optional: check if user still exists
